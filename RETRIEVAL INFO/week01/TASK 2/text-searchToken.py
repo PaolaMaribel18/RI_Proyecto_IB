@@ -77,7 +77,7 @@ def obtener_consulta_usuario():
 
 
 
-directorio = r"D:\SEPTIMO SEMESTRE II\RECUPERACION INFORMACION\KevinMaldonado99\RETRIEVAL INFO\week01\TASK 2\Data"
+directorio = r"D:\SEPTIMO SEMESTRE II\RI\KevinMaldonado99\RETRIEVAL INFO\week01\TASK 2\Data"
 archivos_tokenizados = preparar_archivos_tokenizados(directorio)
 indice_invertido = crear_indice_invertido(archivos_tokenizados)
 
