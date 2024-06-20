@@ -4,29 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resultados de Búsqueda</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">  <!-- Enlace al archivo CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
     <div class="container">
         <div class="header">
-
-            <center><h1>PROYECTO DE RECUPERACION DE LA INFORMACION</h1>
-            
+            <h1>PROYECTO DE RECUPERACION DE LA INFORMACION</h1>
             <form action="/" method="post">
                 <label for="consulta">Consulta:</label>
                 <input type="text" id="consulta" name="consulta">
                 <button type="submit">Buscar</button>
             </form>
-             </center>
         </div>
         
         {% if consulta %}
-        <center><h2>Resultados para "{{ consulta }}"</h2> </center>
+        <h2>Resultados para "{{ consulta }}"</h2>
         
         <div class="results">
             <h3>Resultados BoW</h3>
             {% for archivo, similitud, contenido in resultados_bow %}
-            <div class="result-box" style="background-color: {{ loop.cycle('#ffffcc', '#66ccff') }}">
+            <div class="result-box">
                 <strong>Archivo:</strong> {{ archivo }} <br>
                 <strong>Similitud:</strong> {{ similitud }} <br>
                 <strong>Contenido:</strong> {{ contenido }} <br>
@@ -37,7 +34,7 @@
         <div class="results">
             <h3>Resultados TF-IDF</h3>
             {% for archivo, similitud, contenido in resultados_tfidf %}
-            <div class="result-box" style="background-color: {{ loop.cycle('#ffffcc', '#66ccff') }}">
+            <div class="result-box">
                 <strong>Archivo:</strong> {{ archivo }} <br>
                 <strong>Similitud:</strong> {{ similitud }} <br>
                 <strong>Contenido:</strong> {{ contenido }} <br>
@@ -46,12 +43,11 @@
         </div>
         
         <div class="metrics">
-            <center>
             <h2>Métricas de Evaluación del Sistema</h2>
             <table>
                 <tr>
                     <th></th>
-                    <th>Precision</th>
+                    <th>Precisión</th>
                     <th>Recall</th>
                     <th>F1-score</th>
                 </tr>
@@ -68,7 +64,6 @@
                     <td>{{ promedio_f1_tfidf }}</td>
                 </tr>
             </table>
-        </center>
         </div>
         
         {% else %}
