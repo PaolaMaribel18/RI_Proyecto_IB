@@ -110,3 +110,48 @@ h2 {
 .metrics td strong {
     color: #4CAF50;
 }
+
+.highlight {
+    color: blue;
+    font-weight: bold;
+}
+
+/* Estilo para las pestañas */
+.tab {
+    overflow: hidden;
+    border: 1px solid #ccc;
+    background-color: #f1f1f1;
+}
+
+/* Botones de las pestañas */
+.tab button {
+    background-color: inherit;
+    float: left;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 14px 16px;
+    transition: 0.3s;
+    font-size: 17px;
+}
+
+/* Cambiar el color de fondo de los botones de las pestañas al pasar el mouse */
+.tab button:hover {
+    background-color: #ddd;
+}
+
+/* Crear un color de fondo activo para el botón de la pestaña */
+.tab button.active {
+    background-color: #ccc;
+}
+
+/* Ocultar el contenido de las pestañas por defecto */
+.tabcontent {
+    display: none;
+    padding: 6px 12px;
+}
+
+/* Estilo para resaltar texto */
+.highlight {
+    background-color: yellow;
+}
