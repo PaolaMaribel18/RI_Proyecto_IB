@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Búsqueda de Documentos</title>
+</head>
+<body>
+    <h1>Búsqueda de Documentos</h1>
+    
+    <form method="POST">
+        <label for="consulta">Consulta:</label>
+        <input type="text" id="consulta" name="consulta">
+        <button type="submit">Buscar</button>
+    </form>
+
+    {% if consulta %}
+        <h2>Resultados de la consulta "{{ consulta }}" usando BoW</h2>
+        <div>
+            {% if resultados_bow %}
+                {% for archivo, similitud, contenido in resultados_bow %}
+                    <div>
+                        <h3>Archivo: {{ archivo }} - Similitud: {{ similitud }}</h3>
+                        <p>{{ contenido }}</p>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>No se encontraron resultados usando BoW.</p>
+            {% endif %}
+        </div>
+
+        <h2>Resultados de la consulta "{{ consulta }}" usando TF-IDF</h2>
+        <div>
+            {% if resultados_tfidf %}
+                {% for archivo, similitud, contenido in resultados_tfidf %}
+                    <div>
+                        <h3>Archivo: {{ archivo }} - Similitud: {{ similitud }}</h3>
+                        <p>{{ contenido }}</p>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>No se encontraron resultados usando TF-IDF.</p>
+            {% endif %}
+        </div>
+
+        <h2>Métricas de Evaluación</h2>
+<div>
+    {% if metricas_evaluacion %}
+        <ul>
+            {% for categoria, metricas in metricas_evaluacion.items() %}
+                <li>Categoría: {{ categoria }}</li>
+                <ul>
+                    <li>BoW: Precision: {{ metricas['BoW']['Precision'] }}, Recall: {{ metricas['BoW']['Recall'] }}, F1-Score: {{ metricas['BoW']['F1_Score'] }}</li>
+                    <li>TF-IDF: Precision: {{ metricas['TF-IDF']['Precision'] }}, Recall: {{ metricas['TF-IDF']['Recall'] }}, F1-Score: {{ metricas['TF-IDF']['F1_Score'] }}</li>
+                </ul>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No se encontraron métricas de evaluación disponibles.</p>
+    {% endif %}
+</div>
+
+    {% endif %}
+</body>
+</html>
