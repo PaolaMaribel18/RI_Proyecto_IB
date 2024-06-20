@@ -5,68 +5,69 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resultados de Búsqueda</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script>
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tabcontent");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("tablinks");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+    </script>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>PROYECTO DE RECUPERACION DE LA INFORMACION</h1>
+            <h1>PROYECTO DE RECUPERACIÓN DE LA INFORMACIÓN</h1>
             <form action="/" method="post">
                 <label for="consulta">Consulta:</label>
                 <input type="text" id="consulta" name="consulta">
                 <button type="submit">Buscar</button>
             </form>
         </div>
-        
+
         {% if consulta %}
         <h2>Resultados para "{{ consulta }}"</h2>
         
-        <div class="results">
-            <h3>Resultados BoW</h3>
+        <!-- Pestañas -->
+        <div class="tab">
+            <button class="tablinks" onclick="openTab(event, 'BoW')">Resultados BoW-Coseno</button>
+            <button class="tablinks" onclick="openTab(event, 'TFIDF')">Resultados TF-IDF-Coseno</button>
+        </div>
+        
+        <!-- Contenido de las pestañas -->
+        <div id="BoW" class="tabcontent">
+            <h3>Resultados de BoW con Similitud Coseno ({{ resultados_bow|length }} documentos)</h3>
             {% for archivo, similitud, contenido in resultados_bow %}
             <div class="result-box">
                 <strong>Archivo:</strong> {{ archivo }} <br>
                 <strong>Similitud:</strong> {{ similitud }} <br>
-                <strong>Contenido:</strong> {{ contenido }} <br>
+                <strong>Contenido:</strong> {{ contenido | safe }} <br>
             </div>
             {% endfor %}
         </div>
         
-        <div class="results">
-            <h3>Resultados TF-IDF</h3>
+        <div id="TFIDF" class="tabcontent">
+            <h3>Resultados de TF-IDF con Similitud Coseno ({{ resultados_tfidf|length }} documentos)</h3>
             {% for archivo, similitud, contenido in resultados_tfidf %}
             <div class="result-box">
                 <strong>Archivo:</strong> {{ archivo }} <br>
                 <strong>Similitud:</strong> {{ similitud }} <br>
-                <strong>Contenido:</strong> {{ contenido }} <br>
+                <strong>Contenido:</strong> {{ contenido | safe }} <br>
             </div>
             {% endfor %}
         </div>
         
-        <!-- Métricas de evaluación 
-        <div class="metrics">
-            <h2>Métricas de Evaluación del Sistema</h2>
-            <table>
-                <tr>
-                    <th></th>
-                    <th>Precisión</th>
-                    <th>Recall</th>
-                    <th>F1-score</th>
-                </tr>
-                <tr>
-                    <td><strong>BoW</strong></td>
-                    <td>{{ promedio_precision_bow }}</td>
-                    <td>{{ promedio_recall_bow }}</td>
-                    <td>{{ promedio_f1_bow }}</td>
-                </tr>
-                <tr>
-                    <td><strong>TF-IDF</strong></td>
-                    <td>{{ promedio_precision_tfidf }}</td>
-                    <td>{{ promedio_recall_tfidf }}</td>
-                    <td>{{ promedio_f1_tfidf }}</td>
-                </tr>
-            </table>
-        </div>
-        -->
+        <script>
+            // Abre la primera pestaña por defecto
+            document.getElementsByClassName('tablinks')[0].click();
+        </script>
         
         {% else %}
         <p>Ingrese una consulta para buscar.</p>
