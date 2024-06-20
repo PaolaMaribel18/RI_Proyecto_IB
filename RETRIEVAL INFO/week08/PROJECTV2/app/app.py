@@ -146,7 +146,7 @@ def preprocess_text_and_get_vectorizers(corpus_df, stopwords_path):
     corpus_df['Texto'] = corpus_df['Texto'].apply(lambda x: preprocesar_texto(x, stopwords_set, stemmer))
 
     # Crear vectorizadores
-    bow_vectorizer = CountVectorizer()
+    bow_vectorizer = CountVectorizer(binary=True)
     bow_vectorizer.fit(corpus_df['Texto'])
 
     tfidf_vectorizer = TfidfVectorizer()
@@ -155,7 +155,7 @@ def preprocess_text_and_get_vectorizers(corpus_df, stopwords_path):
     return bow_vectorizer, tfidf_vectorizer
 
 # Motor de búsqueda
-def motor_busqueda(consulta, corpus_df, stopwords_path, bow_vectorizer, tfidf_vectorizer):
+def motor_busqueda(consulta, corpus_df, stopwords_path, bow_vectorizer, tfidf_vectorizer,umbral=0.2):
     stopwords_set = leer_stopwords(stopwords_path)
     stemmer = PorterStemmer()
 
@@ -174,10 +174,11 @@ def motor_busqueda(consulta, corpus_df, stopwords_path, bow_vectorizer, tfidf_ve
     similitudes_bow = calcular_similitud_coseno(query_vector_bow, document_matrix_bow)
     similitudes_tfidf = calcular_similitud_coseno(query_vector_tfidf, document_matrix_tfidf)
 
-    # Crear resultados ordenados por similitud descendente
-    resultados_bow = list(zip(corpus_df['Archivo'], similitudes_bow))
-    resultados_tfidf = list(zip(corpus_df['Archivo'], similitudes_tfidf))
+        # Crear resultados ordenados aplicando el umbral
+    resultados_bow = [(archivo, similitud) for archivo, similitud in zip(corpus_df['Archivo'], similitudes_bow) if similitud >= umbral]
+    resultados_tfidf = [(archivo, similitud) for archivo, similitud in zip(corpus_df['Archivo'], similitudes_tfidf) if similitud >= umbral]
 
+    # Ordenar los resultados por similitud (en orden descendente)
     resultados_ordenados_bow = sorted(resultados_bow, key=lambda x: x[1], reverse=True)[:10]
     resultados_ordenados_tfidf = sorted(resultados_tfidf, key=lambda x: x[1], reverse=True)[:10]
 
@@ -210,6 +211,52 @@ def ajustar_valor(valor):
         else:
             return round(valor, 2)  # Redondear a dos decimales para otros valores
     
+def evaluar_resultados(categorias, corpus_df, stopwords_path, indice_invertido_cat):
+    rows_bow = []
+    rows_tfidf = []
+
+    for categoria in categorias:
+        # Obtener documentos asociados a la categoría desde el defaultdict
+        documentos = indice_invertido_cat[categoria]
+
+        # Obtener resultados de búsqueda utilizando tu motor de búsqueda
+        resultados_bow, resultados_tfidf = motor_busqueda(categoria, corpus_df, stopwords_path, bow_vectorizer, tfidf_vectorizer)
+
+        # Evaluar resultados para BoW
+        precision_bow, recall_bow, f1_bow = evaluate(categoria, resultados_bow, indice_invertido_cat)
+
+        # Evaluar resultados para TF-IDF
+        precision_tfidf, recall_tfidf, f1_tfidf = evaluate(categoria, resultados_tfidf, indice_invertido_cat)
+
+        # Agregar los resultados de BoW a la lista de filas
+        rows_bow.append({'categoria': categoria, 'precision': precision_bow, 'recall': recall_bow, 'f1': f1_bow})
+
+        # Agregar los resultados de TF-IDF a la lista de filas
+        rows_tfidf.append({'categoria': categoria, 'precision': precision_tfidf, 'recall': recall_tfidf, 'f1': f1_tfidf})
+
+    df_resultados_bow = pd.DataFrame(rows_bow)
+    df_resultados_tfidf = pd.DataFrame(rows_tfidf)
+
+    return df_resultados_bow, df_resultados_tfidf
+
+def calcular_promedios(df_resultados_bow, df_resultados_tfidf):
+    # Calcular el promedio de recall, precision y F1 para BoW
+    promedio_recall_bow = df_resultados_bow['recall'].mean()
+    promedio_precision_bow = df_resultados_bow['precision'].mean()
+    promedio_f1_bow = df_resultados_bow['f1'].mean()
+
+    # Calcular el promedio de recall, precision y F1 para TF-IDF
+    promedio_recall_tfidf = df_resultados_tfidf['recall'].mean()
+    promedio_precision_tfidf = df_resultados_tfidf['precision'].mean()
+    promedio_f1_tfidf = df_resultados_tfidf['f1'].mean()
+
+    resultados_promedio_umbral = [
+        ["BoW", promedio_recall_bow, promedio_precision_bow, promedio_f1_bow],
+        ["TF-IDF", promedio_recall_tfidf, promedio_precision_tfidf, promedio_f1_tfidf]
+    ]
+    df_resultados_umbral = pd.DataFrame(resultados_promedio_umbral, columns=["", "Recall", "Precision", "F1"])
+
+    return df_resultados_umbral
 
 # Ruta principal de la aplicación
 @app.route('/', methods=['GET', 'POST'])
@@ -246,47 +293,38 @@ def index():
         
         
         # Evaluar resultados para cada categoría
-        metricas_evaluacion = {}
-        for categoria in categorias:
-            precision_bow, recall_bow, f1_bow = evaluate(categoria, resultados_bow, indice_invertido_categorias)
-            precision_tfidf, recall_tfidf, f1_tfidf = evaluate(categoria, resultados_tfidf, indice_invertido_categorias)
-            
-            metricas_evaluacion[categoria] = {
-                'BoW': {'Precision': precision_bow, 'Recall': recall_bow, 'F1_Score': f1_bow},
-                'TF-IDF': {'Precision': precision_tfidf, 'Recall': recall_tfidf, 'F1_Score': f1_tfidf},
-            }
+        df_resultados_bow, df_resultados_tfidf = evaluar_resultados(categorias, corpus_df, stopwords_path, indice_invertido_categorias)
+
+        # Calcular promedios de las métricas
+        df_resultados_umbral = calcular_promedios(df_resultados_bow, df_resultados_tfidf)
+
+        # Aplicar ajuste a los promedios (si es necesario)
+        df_resultados_umbral['Recall'] = df_resultados_umbral['Recall'].apply(ajustar_valor)
+        df_resultados_umbral['Precision'] = df_resultados_umbral['Precision'].apply(ajustar_valor)
+        df_resultados_umbral['F1'] = df_resultados_umbral['F1'].apply(ajustar_valor)
+
+        # Extraer los valores ajustados
+        promedio_precision_bow = df_resultados_umbral.loc[df_resultados_umbral[''] == 'BoW', 'Precision'].values[0]
+        promedio_recall_bow = df_resultados_umbral.loc[df_resultados_umbral[''] == 'BoW', 'Recall'].values[0]
+        promedio_f1_bow = df_resultados_umbral.loc[df_resultados_umbral[''] == 'BoW', 'F1'].values[0]
+
+        promedio_precision_tfidf = df_resultados_umbral.loc[df_resultados_umbral[''] == 'TF-IDF', 'Precision'].values[0]
+        promedio_recall_tfidf = df_resultados_umbral.loc[df_resultados_umbral[''] == 'TF-IDF', 'Recall'].values[0]
+        promedio_f1_tfidf = df_resultados_umbral.loc[df_resultados_umbral[''] == 'TF-IDF', 'F1'].values[0]
 
     
-        # Calcular promedio de precisión, recall y F1-score para BoW y TF-IDF
-        promedio_precision_bow = sum([metricas_evaluacion[categoria]['BoW']['Precision'] for categoria in categorias]) / len(categorias)
-        promedio_recall_bow = sum([metricas_evaluacion[categoria]['BoW']['Recall'] for categoria in categorias]) / len(categorias)
-        promedio_f1_bow = sum([metricas_evaluacion[categoria]['BoW']['F1_Score'] for categoria in categorias]) / len(categorias)
-
-        promedio_precision_tfidf = sum([metricas_evaluacion[categoria]['TF-IDF']['Precision'] for categoria in categorias]) / len(categorias)
-        promedio_recall_tfidf = sum([metricas_evaluacion[categoria]['TF-IDF']['Recall'] for categoria in categorias]) / len(categorias)
-        promedio_f1_tfidf = sum([metricas_evaluacion[categoria]['TF-IDF']['F1_Score'] for categoria in categorias]) / len(categorias)
-
-        # Aplicar ajuste a los promedios
-        promedio_precision_bow = ajustar_valor(promedio_precision_bow)
-        promedio_recall_bow = ajustar_valor(promedio_recall_bow)
-        promedio_f1_bow = ajustar_valor(promedio_f1_bow)
-
-        promedio_precision_tfidf = ajustar_valor(promedio_precision_tfidf)
-        promedio_recall_tfidf = ajustar_valor(promedio_recall_tfidf)
-        promedio_f1_tfidf = ajustar_valor(promedio_f1_tfidf)
-
         # Renderizar la plantilla HTML con los resultados y métricas de evaluaciónes
-        return render_template('index.html', consulta=consulta, 
-                            resultados_bow=resultados_con_contenido_bow,
-                            resultados_tfidf=resultados_con_contenido_tfidf,
-                            metricas_evaluacion=metricas_evaluacion,
-                            promedio_precision_bow=promedio_precision_bow,
-                            promedio_recall_bow=promedio_recall_bow,
-                            promedio_f1_bow=promedio_f1_bow,
-                            promedio_precision_tfidf=promedio_precision_tfidf,
-                            promedio_recall_tfidf=promedio_recall_tfidf,
-                            promedio_f1_tfidf=promedio_f1_tfidf)
-    
+        return render_template('index.html',consulta=consulta, 
+                                            resultados_bow=resultados_con_contenido_bow,
+                                            resultados_tfidf=resultados_con_contenido_tfidf,
+                                            metricas_evaluacion=df_resultados_umbral.to_dict(orient='records'),  # Pasar las métricas como un diccionario
+                                            promedio_precision_bow=promedio_precision_bow,
+                                            promedio_recall_bow=promedio_recall_bow,
+                                            promedio_f1_bow=promedio_f1_bow,
+                                            promedio_precision_tfidf=promedio_precision_tfidf,
+                                            promedio_recall_tfidf=promedio_recall_tfidf,
+                                            promedio_f1_tfidf=promedio_f1_tfidf)
+                                            
     
     return render_template('index.html', consulta=None, resultados_bow=None, resultados_tfidf=None, metricas_evaluacion=None)
 
