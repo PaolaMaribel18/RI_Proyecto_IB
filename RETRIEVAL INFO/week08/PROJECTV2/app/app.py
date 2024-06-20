@@ -275,7 +275,7 @@ def index():
         promedio_recall_tfidf = ajustar_valor(promedio_recall_tfidf)
         promedio_f1_tfidf = ajustar_valor(promedio_f1_tfidf)
 
-        # Renderizar la plantilla HTML con los resultados y métricas de evaluación
+        # Renderizar la plantilla HTML con los resultados y métricas de evaluaciónes
         return render_template('index.html', consulta=consulta, 
                             resultados_bow=resultados_con_contenido_bow,
                             resultados_tfidf=resultados_con_contenido_tfidf,
