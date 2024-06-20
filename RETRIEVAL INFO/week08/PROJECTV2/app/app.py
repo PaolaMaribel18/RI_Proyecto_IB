@@ -203,6 +203,13 @@ def imprimir_resultados(resultados, titulo):
     for i, (archivo, similitud, contenido) in enumerate(resultados[:10]):  # Mostrar los primeros 10 resultados
         print(f"{i + 1}. Archivo: {archivo} - Similitud: {similitud:.4f}\nContenido: {contenido}\n")
     print("\n")
+    
+def ajustar_valor(valor):
+        if valor < 0.1 and valor != 0:  # Ajustar solo si es menor que 0.1 y no es cero
+            return valor * 10
+        else:
+            return round(valor, 2)  # Redondear a dos decimales para otros valores
+    
 
 # Ruta principal de la aplicación
 @app.route('/', methods=['GET', 'POST'])
@@ -249,11 +256,6 @@ def index():
                 'TF-IDF': {'Precision': precision_tfidf, 'Recall': recall_tfidf, 'F1_Score': f1_tfidf},
             }
 
-        def ajustar_valor(valor):
-            if valor < 0.1 and valor != 0:  # Ajustar solo si es menor que 0.1 y no es cero
-                return valor * 10
-            else:
-                return round(valor, 2)  # Redondear a dos decimales para otros valores
     
         # Calcular promedio de precisión, recall y F1-score para BoW y TF-IDF
         promedio_precision_bow = sum([metricas_evaluacion[categoria]['BoW']['Precision'] for categoria in categorias]) / len(categorias)
