@@ -7,6 +7,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from preprocessing import preprocesar_texto
 from collections import defaultdict
 from nltk.stem import PorterStemmer
+import re
 import csv
 from sklearn.metrics import precision_score, recall_score, f1_score
 
@@ -154,6 +155,12 @@ def preprocess_text_and_get_vectorizers(corpus_df, stopwords_path):
 
     return bow_vectorizer, tfidf_vectorizer
 
+# Función para resaltar palabras insensible a mayúsculas y minúsculas
+def resaltar_palabra(texto, palabra):
+    palabra_re = re.compile(re.escape(palabra), re.IGNORECASE)
+    return palabra_re.sub(lambda match: f'<span class="highlight">{match.group(0)}</span>', texto)
+
+
 # Motor de búsqueda
 def motor_busqueda(consulta, corpus_df, stopwords_path, bow_vectorizer, tfidf_vectorizer,umbral=0.2):
     stopwords_set = leer_stopwords(stopwords_path)
@@ -182,9 +189,9 @@ def motor_busqueda(consulta, corpus_df, stopwords_path, bow_vectorizer, tfidf_ve
     resultados_ordenados_bow = sorted(resultados_bow, key=lambda x: x[1], reverse=True)[:10]
     resultados_ordenados_tfidf = sorted(resultados_tfidf, key=lambda x: x[1], reverse=True)[:10]
 
-    # Añadir el contenido de los archivos a los resultados
-    resultados_bow_con_contenido = [(archivo, similitud, leer_contenido_archivo(str(archivo))) for archivo, similitud in resultados_ordenados_bow]
-    resultados_tfidf_con_contenido = [(archivo, similitud, leer_contenido_archivo(str(archivo))) for archivo, similitud in resultados_ordenados_tfidf]
+    # Añadir el contenido de los archivos a los resultados y resaltar la palabra buscada
+    resultados_bow_con_contenido = [(archivo, similitud, resaltar_palabra(leer_contenido_archivo(str(archivo)), consulta)) for archivo, similitud in resultados_ordenados_bow]
+    resultados_tfidf_con_contenido = [(archivo, similitud, resaltar_palabra(leer_contenido_archivo(str(archivo)), consulta)) for archivo, similitud in resultados_ordenados_tfidf]
 
     return resultados_bow_con_contenido, resultados_tfidf_con_contenido
 
