@@ -4,6 +4,8 @@ import pandas as pd
 from nltk.tokenize import word_tokenize
 from nltk.stem import PorterStemmer
 
+
+
 # Descargar recursos de NLTK
 nltk.download('punkt')
 
