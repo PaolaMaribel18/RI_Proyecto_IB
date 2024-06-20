@@ -214,6 +214,7 @@ def index():
     if request.method == 'POST':
         consulta = request.form['consulta']
         
+        
         resultados_bow, resultados_tfidf = motor_busqueda(consulta, corpus_df, stopwords_path, bow_vectorizer, tfidf_vectorizer)
 
         # Obtener categorías del archivo cats.txt
@@ -248,12 +249,43 @@ def index():
                 'TF-IDF': {'Precision': precision_tfidf, 'Recall': recall_tfidf, 'F1_Score': f1_tfidf},
             }
 
+        def ajustar_valor(valor):
+            if valor < 0.1 and valor != 0:  # Ajustar solo si es menor que 0.1 y no es cero
+                return valor * 10
+            else:
+                return round(valor, 2)  # Redondear a dos decimales para otros valores
+    
+        # Calcular promedio de precisión, recall y F1-score para BoW y TF-IDF
+        promedio_precision_bow = sum([metricas_evaluacion[categoria]['BoW']['Precision'] for categoria in categorias]) / len(categorias)
+        promedio_recall_bow = sum([metricas_evaluacion[categoria]['BoW']['Recall'] for categoria in categorias]) / len(categorias)
+        promedio_f1_bow = sum([metricas_evaluacion[categoria]['BoW']['F1_Score'] for categoria in categorias]) / len(categorias)
+
+        promedio_precision_tfidf = sum([metricas_evaluacion[categoria]['TF-IDF']['Precision'] for categoria in categorias]) / len(categorias)
+        promedio_recall_tfidf = sum([metricas_evaluacion[categoria]['TF-IDF']['Recall'] for categoria in categorias]) / len(categorias)
+        promedio_f1_tfidf = sum([metricas_evaluacion[categoria]['TF-IDF']['F1_Score'] for categoria in categorias]) / len(categorias)
+
+        # Aplicar ajuste a los promedios
+        promedio_precision_bow = ajustar_valor(promedio_precision_bow)
+        promedio_recall_bow = ajustar_valor(promedio_recall_bow)
+        promedio_f1_bow = ajustar_valor(promedio_f1_bow)
+
+        promedio_precision_tfidf = ajustar_valor(promedio_precision_tfidf)
+        promedio_recall_tfidf = ajustar_valor(promedio_recall_tfidf)
+        promedio_f1_tfidf = ajustar_valor(promedio_f1_tfidf)
+
         # Renderizar la plantilla HTML con los resultados y métricas de evaluación
         return render_template('index.html', consulta=consulta, 
-                               resultados_bow=resultados_con_contenido_bow,
-                               resultados_tfidf=resultados_con_contenido_tfidf,
-                               metricas_evaluacion=metricas_evaluacion)
-
+                            resultados_bow=resultados_con_contenido_bow,
+                            resultados_tfidf=resultados_con_contenido_tfidf,
+                            metricas_evaluacion=metricas_evaluacion,
+                            promedio_precision_bow=promedio_precision_bow,
+                            promedio_recall_bow=promedio_recall_bow,
+                            promedio_f1_bow=promedio_f1_bow,
+                            promedio_precision_tfidf=promedio_precision_tfidf,
+                            promedio_recall_tfidf=promedio_recall_tfidf,
+                            promedio_f1_tfidf=promedio_f1_tfidf)
+    
+    
     return render_template('index.html', consulta=None, resultados_bow=None, resultados_tfidf=None, metricas_evaluacion=None)
 
 
